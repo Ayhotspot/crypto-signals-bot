@@ -2334,7 +2334,30 @@
 
 
 
-#Gateio API Now
+#Gateio API Now from deep seek
+
+# import os
+# from flask import Flask
+# from telegram.ext import Updater
+
+# app = Flask(__name__)
+# PORT = int(os.environ.get("PORT", 5000))
+
+# # Telegram bot setup
+# updater = Updater("YOUR_BOT_TOKEN")
+# dispatcher = updater.dispatcher
+
+# # Start bot polling
+# updater.start_polling()
+
+# # Minimal Flask endpoint just to bind the port
+# @app.route("/")
+# def home():
+#     return "Bot is running!"
+
+# if __name__ == "__main__":
+#     app.run(host="0.0.0.0", port=PORT)
+
 
 import os
 import requests
@@ -2342,6 +2365,10 @@ import random
 import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+from keep_alive import keep_alive
+# call the function before starting your bot
+
+
 
 # ===== Enable logging =====
 logging.basicConfig(
