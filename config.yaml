@@ -1,0 +1,9 @@
+coins:
+  - pair: BTCUSDT
+    thresholds:
+      buy_below: 65000
+      sell_above: 70000
+  - pair: SOLUSDT
+    thresholds:
+      buy_below: 150
+      sell_above: 180
