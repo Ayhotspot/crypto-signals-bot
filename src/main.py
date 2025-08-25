@@ -2683,7 +2683,7 @@ logger = logging.getLogger(__name__)
 # ===== Bot Token =====
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not BOT_TOKEN:
-    BOT_TOKEN = "8265642827:AAGNTfwiFuDx1o2eF85kV_O_jqXAoXRhyHs"
+    BOT_TOKEN = "8300580474:AAFbkwNzWi1vjJk7RGcJTiCZd6qHXMFpvpQ"
 
 # ===== Gate.io API Configuration =====
 GATEIO_API_URL = "https://api.gateio.ws/api/v4/spot/tickers"
