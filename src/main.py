@@ -2665,166 +2665,279 @@
 
 
 
+# import os
+# import requests
+# import random
+# import logging
+# from telegram import Update
+# from telegram.ext import Application, CommandHandler, ContextTypes
+# from keep_alive import keep_alive
+
+# # ===== Enable logging =====
+# logging.basicConfig(
+#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+#     level=logging.INFO,
+# )
+# logger = logging.getLogger(__name__)
+
+# # ===== Bot Token =====
+# BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+# if not BOT_TOKEN:
+#     BOT_TOKEN = "8300580474:AAFbkwNzWi1vjJk7RGcJTiCZd6qHXMFpvpQ"
+
+# # ===== Gate.io API Configuration =====
+# GATEIO_API_URL = "https://api.gateio.ws/api/v4/spot/tickers"
+
+# GATEIO_SYMBOLS = {
+#     "BTCUSDT": "BTC_USDT",
+#     "ETHUSDT": "ETH_USDT",
+#     "SOLUSDT": "SOL_USDT",
+#     "ADAUSDT": "ADA_USDT",
+#     "DOGEUSDT": "DOGE_USDT",
+#     "DOTUSDT": "DOT_USDT",
+#     "XRPUSDT": "XRP_USDT",
+#     "LTCUSDT": "LTC_USDT",
+#     "BNBUSDT": "BNB_USDT",
+#     "MATICUSDT": "MATIC_USDT",
+#     "AVAXUSDT": "AVAX_USDT",
+#     "LINKUSDT": "LINK_USDT"
+# }
+
+# # ===== Function to get live price from Gate.io API =====
+# def get_price(symbol="BTCUSDT"):
+#     try:
+#         gateio_symbol = GATEIO_SYMBOLS.get(symbol)
+#         if not gateio_symbol:
+#             base_symbol = symbol.replace("USDT", "")
+#             for key, value in GATEIO_SYMBOLS.items():
+#                 if key.startswith(base_symbol):
+#                     gateio_symbol = value
+#                     break
+#             if not gateio_symbol:
+#                 raise ValueError(f"Unsupported symbol: {symbol}")
+
+#         params = {"currency_pair": gateio_symbol}
+#         response = requests.get(GATEIO_API_URL, params=params, timeout=15)
+#         response.raise_for_status()
+#         data = response.json()
+
+#         if isinstance(data, list) and len(data) > 0 and "last" in data[0]:
+#             return float(data[0]["last"])
+#         else:
+#             raise ValueError("Unexpected data format from Gate.io")
+
+#     except Exception as e:
+#         logger.warning(f"Gate.io API failed for {symbol}: {e}. Using demo price.")
+#         demo_prices = {
+#             "BTCUSDT": random.uniform(50000, 70000),
+#             "SOLUSDT": random.uniform(160, 180),
+#             "ETHUSDT": random.uniform(2500, 3500),
+#         }
+#         return demo_prices.get(symbol, random.uniform(50, 500))
+
+# # ===== Generate realistic order type =====
+# def generate_order_type():
+#     return random.choices(["LIMIT", "MARKET"], weights=[60, 40])[0]
+
+# # ===== Generate realistic limit entry =====
+# def generate_limit_entry(current_price, action):
+#     if "BUY" in action:
+#         return round(current_price * (1 - random.uniform(0.01, 0.03)), 2)
+#     else:
+#         return round(current_price * (1 + random.uniform(0.01, 0.03)), 2)
+
+# # ===== /start command =====
+# async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#     await update.message.reply_text(
+#         "🚀 Welcome to Crypto Trading Signals Bot!\n\n"
+#         "Available Commands:\n"
+#         "/signal BUY BTCUSDT 42000 44000\n"
+#         "/autosignal SOL\n\n"
+#         "Supported coins: BTC, ETH, SOL, ADA, DOGE, DOT, XRP, LTC, BNB, MATIC, AVAX, LINK"
+#     )
+
+# # ===== /signal command =====
+# async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#     if len(context.args) >= 4:
+#         action = context.args[0].upper()
+#         coin = context.args[1].upper()
+#         entry = context.args[2]
+#         target = context.args[3]
+
+#         order_type = generate_order_type()
+#         leverage = f"{random.randint(3, 10)}x" if random.random() > 0.3 else "Spot"
+
+#         message = (
+#             f"🚀 *NEW SIGNAL ALERT* 🚀\n\n"
+#             f"Action: {action}\n"
+#             f"Pair: {coin}\n"
+#             f"Order Type: {order_type}\n"
+#             f"Entry: {entry}\n"
+#             f"Target: {target}\n"
+#             f"Leverage: {leverage}\n\n"
+#             f"📊 Data source: Gate.io"
+#         )
+#         await update.message.reply_text(message, parse_mode="Markdown")
+#     else:
+#         await update.message.reply_text("Usage: /signal BUY BTCUSDT 42000 44000")
+
+# # ===== /autosignal command =====
+# async def autosignal(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#     symbol = "BTCUSDT"
+#     if len(context.args) > 0:
+#         coin_input = context.args[0].upper()
+#         symbol = coin_input if coin_input.endswith("USDT") else coin_input + "USDT"
+
+#     current_price = get_price(symbol)
+#     action = random.choice(["BUY (LONG)", "SELL (SHORT)"])
+#     order_type = generate_order_type()
+#     leverage = f"{random.randint(3, 10)}x" if random.random() > 0.3 else "Spot"
+
+#     if order_type == "MARKET":
+#         entry = round(current_price, 2)
+#     else:
+#         entry = generate_limit_entry(current_price, action)
+
+#     stop_loss = round(entry * (0.95 if "BUY" in action else 1.05), 2)
+#     take_profit_1 = round(entry * (1.03 if "BUY" in action else 0.97), 2)
+#     take_profit_2 = round(entry * (1.06 if "BUY" in action else 0.94), 2)
+#     take_profit_3 = round(entry * (1.09 if "BUY" in action else 0.91), 2)
+
+#     message = (
+#         f"📊 *{symbol} Trading Signal* 📊\n\n"
+#         f"Action: {action}\n"
+#         f"Order Type: {order_type}\n"
+#         f"Leverage: {leverage}\n"
+#         f"Entry: ${entry}\n"
+#         f"Stop Loss: ${stop_loss}\n"
+#         f"TP1: ${take_profit_1}\nTP2: ${take_profit_2}\nTP3: ${take_profit_3}"
+#     )
+
+#     await update.message.reply_text(message, parse_mode="Markdown")
+
+# # ===== Main Runner =====
+# def main():
+#     app = Application.builder().token(BOT_TOKEN).build()
+#     app.add_handler(CommandHandler("start", start))
+#     app.add_handler(CommandHandler("signal", signal))
+#     app.add_handler(CommandHandler("autosignal", autosignal))
+
+#     logger.info("Bot is running with Gate.io API 🚀")
+#     app.run_polling()
+
+# if __name__ == "__main__":
+#     keep_alive()
+#     main()
+
+
+#Updated code to add MELANIA, TRUMP and other sexy coins to our trade signal
+
+
 import os
-import requests
 import random
+import requests
 import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
-from keep_alive import keep_alive
+from keep_alive import keep_alive  # remove this line if you no dey use Replit/Render keep_alive server
 
-# ===== Enable logging =====
+# =========================
+# CONFIG
+# =========================
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or "8300580474:AAFbkwNzWi1vjJk7RGcJTiCZd6qHXMFpvpQ"
+GATEIO_API_URL = "https://api.gateio.ws/api/v4/spot/tickers"
+
+# Logging setup
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
+    level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# ===== Bot Token =====
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-if not BOT_TOKEN:
-    BOT_TOKEN = "8300580474:AAFbkwNzWi1vjJk7RGcJTiCZd6qHXMFpvpQ"
-
-# ===== Gate.io API Configuration =====
-GATEIO_API_URL = "https://api.gateio.ws/api/v4/spot/tickers"
-
-GATEIO_SYMBOLS = {
-    "BTCUSDT": "BTC_USDT",
-    "ETHUSDT": "ETH_USDT",
-    "SOLUSDT": "SOL_USDT",
-    "ADAUSDT": "ADA_USDT",
-    "DOGEUSDT": "DOGE_USDT",
-    "DOTUSDT": "DOT_USDT",
-    "XRPUSDT": "XRP_USDT",
-    "LTCUSDT": "LTC_USDT",
-    "BNBUSDT": "BNB_USDT",
-    "MATICUSDT": "MATIC_USDT",
-    "AVAXUSDT": "AVAX_USDT",
-    "LINKUSDT": "LINK_USDT"
-}
-
-# ===== Function to get live price from Gate.io API =====
-def get_price(symbol="BTCUSDT"):
+# =========================
+# HELPERS
+# =========================
+def get_price_gate(symbol="BTCUSDT"):
+    """
+    Fetch live price from Gate.io
+    symbol: e.g. BTCUSDT, FARTUSDT
+    """
     try:
-        gateio_symbol = GATEIO_SYMBOLS.get(symbol)
-        if not gateio_symbol:
-            base_symbol = symbol.replace("USDT", "")
-            for key, value in GATEIO_SYMBOLS.items():
-                if key.startswith(base_symbol):
-                    gateio_symbol = value
-                    break
-            if not gateio_symbol:
-                raise ValueError(f"Unsupported symbol: {symbol}")
-
-        params = {"currency_pair": gateio_symbol}
-        response = requests.get(GATEIO_API_URL, params=params, timeout=15)
-        response.raise_for_status()
-        data = response.json()
-
-        if isinstance(data, list) and len(data) > 0 and "last" in data[0]:
+        pair = symbol.replace("USDT", "_USDT")
+        resp = requests.get(GATEIO_API_URL, params={"currency_pair": pair}, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, list) and data and "last" in data[0]:
             return float(data[0]["last"])
         else:
-            raise ValueError("Unexpected data format from Gate.io")
-
+            raise ValueError("No price data")
     except Exception as e:
-        logger.warning(f"Gate.io API failed for {symbol}: {e}. Using demo price.")
-        demo_prices = {
-            "BTCUSDT": random.uniform(50000, 70000),
-            "SOLUSDT": random.uniform(160, 180),
-            "ETHUSDT": random.uniform(2500, 3500),
-        }
-        return demo_prices.get(symbol, random.uniform(50, 500))
+        logger.warning(f"Gate.io fetch failed for {symbol}: {e}")
+        return None
 
-# ===== Generate realistic order type =====
 def generate_order_type():
     return random.choices(["LIMIT", "MARKET"], weights=[60, 40])[0]
 
-# ===== Generate realistic limit entry =====
-def generate_limit_entry(current_price, action):
+def generate_limit_entry(price, action):
     if "BUY" in action:
-        return round(current_price * (1 - random.uniform(0.01, 0.03)), 2)
+        return round(price * (1 - random.uniform(0.01, 0.03)), 6)
     else:
-        return round(current_price * (1 + random.uniform(0.01, 0.03)), 2)
+        return round(price * (1 + random.uniform(0.01, 0.03)), 6)
 
-# ===== /start command =====
+# =========================
+# BOT COMMANDS
+# =========================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🚀 Welcome to Crypto Trading Signals Bot!\n\n"
-        "Available Commands:\n"
-        "/signal BUY BTCUSDT 42000 44000\n"
-        "/autosignal SOL\n\n"
-        "Supported coins: BTC, ETH, SOL, ADA, DOGE, DOT, XRP, LTC, BNB, MATIC, AVAX, LINK"
+        "👋 Welcome to Crypto Signal Bot!\n\n"
+        "Use /autosignal COIN to get a signal.\n"
+        "Example: /autosignal BTC or /autosignal FART"
     )
 
-# ===== /signal command =====
-async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if len(context.args) >= 4:
-        action = context.args[0].upper()
-        coin = context.args[1].upper()
-        entry = context.args[2]
-        target = context.args[3]
-
-        order_type = generate_order_type()
-        leverage = f"{random.randint(3, 10)}x" if random.random() > 0.3 else "Spot"
-
-        message = (
-            f"🚀 *NEW SIGNAL ALERT* 🚀\n\n"
-            f"Action: {action}\n"
-            f"Pair: {coin}\n"
-            f"Order Type: {order_type}\n"
-            f"Entry: {entry}\n"
-            f"Target: {target}\n"
-            f"Leverage: {leverage}\n\n"
-            f"📊 Data source: Gate.io"
-        )
-        await update.message.reply_text(message, parse_mode="Markdown")
-    else:
-        await update.message.reply_text("Usage: /signal BUY BTCUSDT 42000 44000")
-
-# ===== /autosignal command =====
 async def autosignal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    symbol = "BTCUSDT"
-    if len(context.args) > 0:
-        coin_input = context.args[0].upper()
-        symbol = coin_input if coin_input.endswith("USDT") else coin_input + "USDT"
+    coin = context.args[0].upper() if context.args else "BTC"
+    symbol = coin if coin.endswith("USDT") else coin + "USDT"
 
-    current_price = get_price(symbol)
+    price = get_price_gate(symbol)
+    if not price:
+        await update.message.reply_text(f"❌ {symbol} not listed on Gate.io or no data available.")
+        return
+
     action = random.choice(["BUY (LONG)", "SELL (SHORT)"])
     order_type = generate_order_type()
-    leverage = f"{random.randint(3, 10)}x" if random.random() > 0.3 else "Spot"
+    leverage = f"{random.randint(3,10)}x" if random.random() > 0.3 else "Spot"
 
-    if order_type == "MARKET":
-        entry = round(current_price, 2)
-    else:
-        entry = generate_limit_entry(current_price, action)
+    entry = round(price, 6) if order_type == "MARKET" else generate_limit_entry(price, action)
+    sl = round(entry * (0.95 if "BUY" in action else 1.05), 6)
+    tp1 = round(entry * (1.03 if "BUY" in action else 0.97), 6)
+    tp2 = round(entry * (1.06 if "BUY" in action else 0.94), 6)
+    tp3 = round(entry * (1.09 if "BUY" in action else 0.91), 6)
 
-    stop_loss = round(entry * (0.95 if "BUY" in action else 1.05), 2)
-    take_profit_1 = round(entry * (1.03 if "BUY" in action else 0.97), 2)
-    take_profit_2 = round(entry * (1.06 if "BUY" in action else 0.94), 2)
-    take_profit_3 = round(entry * (1.09 if "BUY" in action else 0.91), 2)
-
-    message = (
+    msg = (
         f"📊 *{symbol} Trading Signal* 📊\n\n"
         f"Action: {action}\n"
         f"Order Type: {order_type}\n"
         f"Leverage: {leverage}\n"
         f"Entry: ${entry}\n"
-        f"Stop Loss: ${stop_loss}\n"
-        f"TP1: ${take_profit_1}\nTP2: ${take_profit_2}\nTP3: ${take_profit_3}"
+        f"Stop Loss: ${sl}\n"
+        f"TP1: ${tp1}\nTP2: ${tp2}\nTP3: ${tp3}"
     )
 
-    await update.message.reply_text(message, parse_mode="Markdown")
+    await update.message.reply_text(msg, parse_mode="Markdown")
 
-# ===== Main Runner =====
+# =========================
+# MAIN
+# =========================
 def main():
+    keep_alive()  # remove if you no dey use keep_alive
     app = Application.builder().token(BOT_TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("signal", signal))
     app.add_handler(CommandHandler("autosignal", autosignal))
 
-    logger.info("Bot is running with Gate.io API 🚀")
+    logger.info("Bot is running...")
     app.run_polling()
 
 if __name__ == "__main__":
-    keep_alive()
     main()
+
