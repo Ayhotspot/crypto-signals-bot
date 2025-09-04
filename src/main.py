@@ -2839,7 +2839,7 @@ import requests
 import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
-from keep_alive import keep_alive  # remove this line if you no dey use Replit/Render keep_alive server
+from keep_alive import keep_alive  # remove if not using replit/uptime server
 
 # =========================
 # CONFIG
@@ -2858,10 +2858,7 @@ logger = logging.getLogger(__name__)
 # HELPERS
 # =========================
 def get_price_gate(symbol="BTCUSDT"):
-    """
-    Fetch live price from Gate.io
-    symbol: e.g. BTCUSDT, FARTUSDT
-    """
+    """Fetch live price from Gate.io"""
     try:
         pair = symbol.replace("USDT", "_USDT")
         resp = requests.get(GATEIO_API_URL, params={"currency_pair": pair}, timeout=10)
@@ -2875,14 +2872,29 @@ def get_price_gate(symbol="BTCUSDT"):
         logger.warning(f"Gate.io fetch failed for {symbol}: {e}")
         return None
 
-def generate_order_type():
-    return random.choices(["LIMIT", "MARKET"], weights=[60, 40])[0]
+def format_signal(symbol, price):
+    """Format the signal message like the sample screenshot"""
+    action = random.choice(["BUY LIMIT", "SELL LIMIT"])
+    order_type = "ORDER"
 
-def generate_limit_entry(price, action):
-    if "BUY" in action:
-        return round(price * (1 - random.uniform(0.01, 0.03)), 6)
-    else:
-        return round(price * (1 + random.uniform(0.01, 0.03)), 6)
+    entry = price
+    sl = entry * (0.95 if "BUY" in action else 1.05)
+    tp1 = entry * (1.03 if "BUY" in action else 0.97)
+    tp2 = entry * (1.06 if "BUY" in action else 0.94)
+    tp3 = entry * (1.09 if "BUY" in action else 0.91)
+
+    msg = (
+        f"{action} {order_type} 📛\n\n"
+        f"🔥 *{symbol}*\n\n"
+        f"ENTRY - {entry:.2f}\n\n"
+        f"TP1 - {tp1:.2f}\n"
+        f"TP2 - {tp2:.2f}\n"
+        f"TP3 - {tp3:.2f}\n\n"
+        f"SL - {sl:.2f}\n\n"
+        f"USE PROPER RISK MANAGEMENT\n\n"
+        f"RISK ONLY 5 - 10% ✅"
+    )
+    return msg
 
 # =========================
 # BOT COMMANDS
@@ -2890,46 +2902,32 @@ def generate_limit_entry(price, action):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Welcome to Crypto Signal Bot!\n\n"
-        "Use /autosignal COIN to get a signal.\n"
-        "Example: /autosignal BTC or /autosignal FART"
+        "Use /autosignal COIN or multiple coins.\n"
+        "Example: /autosignal BTC ETH TRUMP"
     )
 
 async def autosignal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    coin = context.args[0].upper() if context.args else "BTC"
-    symbol = coin if coin.endswith("USDT") else coin + "USDT"
-
-    price = get_price_gate(symbol)
-    if not price:
-        await update.message.reply_text(f"❌ {symbol} not listed on Gate.io or no data available.")
+    if not context.args:
+        await update.message.reply_text("⚠️ Usage: /autosignal BTC ETH TRUMP ...")
         return
 
-    action = random.choice(["BUY (LONG)", "SELL (SHORT)"])
-    order_type = generate_order_type()
-    leverage = f"{random.randint(3,10)}x" if random.random() > 0.3 else "Spot"
+    coins = [c.upper() for c in context.args]
 
-    entry = round(price, 6) if order_type == "MARKET" else generate_limit_entry(price, action)
-    sl = round(entry * (0.95 if "BUY" in action else 1.05), 6)
-    tp1 = round(entry * (1.03 if "BUY" in action else 0.97), 6)
-    tp2 = round(entry * (1.06 if "BUY" in action else 0.94), 6)
-    tp3 = round(entry * (1.09 if "BUY" in action else 0.91), 6)
+    for coin in coins:
+        symbol = coin if coin.endswith("USDT") else coin + "USDT"
+        price = get_price_gate(symbol)
+        if not price:
+            await update.message.reply_text(f"❌ {symbol} not listed on Gate.io or no data available.")
+            continue
 
-    msg = (
-        f"📊 *{symbol} Trading Signal* 📊\n\n"
-        f"Action: {action}\n"
-        f"Order Type: {order_type}\n"
-        f"Leverage: {leverage}\n"
-        f"Entry: ${entry}\n"
-        f"Stop Loss: ${sl}\n"
-        f"TP1: ${tp1}\nTP2: ${tp2}\nTP3: ${tp3}"
-    )
-
-    await update.message.reply_text(msg, parse_mode="Markdown")
+        msg = format_signal(symbol, price)
+        await update.message.reply_text(msg, parse_mode="Markdown")
 
 # =========================
 # MAIN
 # =========================
 def main():
-    keep_alive()  # remove if you no dey use keep_alive
+    keep_alive()  # remove if not needed
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
