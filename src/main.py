@@ -2886,11 +2886,11 @@ def format_signal(symbol, price):
     msg = (
         f"{action} {order_type} 📛\n\n"
         f"🔥 *{symbol}*\n\n"
-        f"ENTRY - {entry:.2f}\n\n"
-        f"TP1 - {tp1:.2f}\n"
-        f"TP2 - {tp2:.2f}\n"
-        f"TP3 - {tp3:.2f}\n\n"
-        f"SL - {sl:.2f}\n\n"
+        f"ENTRY - {entry:.4f}\n\n"
+        f"TP1 - {tp1:.4f}\n"
+        f"TP2 - {tp2:.4f}\n"
+        f"TP3 - {tp3:.4f}\n\n"
+        f"SL - {sl:.4f}\n\n"
         f"USE PROPER RISK MANAGEMENT\n\n"
         f"RISK ONLY 5 - 10% ✅"
     )
