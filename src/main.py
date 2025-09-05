@@ -2838,7 +2838,7 @@ import random
 import requests
 import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Application, MessageHandler, filters, ContextTypes
 from keep_alive import keep_alive  # remove if not using replit/uptime server
 
 # =========================
@@ -2873,45 +2873,54 @@ def get_price_gate(symbol="BTCUSDT"):
         return None
 
 def format_signal(symbol, price):
-    """Format the signal message like the sample screenshot"""
-    action = random.choice(["BUY LIMIT", "SELL LIMIT"])
-    order_type = "ORDER"
+    """Format the signal message like screenshot order"""
+    action = random.choice(["BUY", "SELL"])
+    order_type = random.choices(["MARKET", "LIMIT"], weights=[60, 40])[0]
 
-    entry = price
-    sl = entry * (0.95 if "BUY" in action else 1.05)
-    tp1 = entry * (1.03 if "BUY" in action else 0.97)
-    tp2 = entry * (1.06 if "BUY" in action else 0.94)
-    tp3 = entry * (1.09 if "BUY" in action else 0.91)
+    # entry logic
+    if order_type == "MARKET":
+        entry = price
+    else:  # LIMIT
+        if action == "BUY":
+            entry = price * (1 - random.uniform(0.01, 0.03))  # 1–3% below
+        else:
+            entry = price * (1 + random.uniform(0.01, 0.03))  # 1–3% above
+
+    sl = entry * (0.95 if action == "BUY" else 1.05)
+    tp1 = entry * (1.03 if action == "BUY" else 0.97)
+    tp2 = entry * (1.06 if action == "BUY" else 0.94)
+    tp3 = entry * (1.09 if action == "BUY" else 0.91)
 
     msg = (
-        f"{action} {order_type} 📛\n\n"
+        f"{action} {order_type} ORDER 🔥\n\n"
         f"🔥 *{symbol}*\n\n"
-        f"ENTRY - {entry:.4f}\n\n"
-        f"TP1 - {tp1:.4f}\n"
-        f"TP2 - {tp2:.4f}\n"
-        f"TP3 - {tp3:.4f}\n\n"
-        f"SL - {sl:.4f}\n\n"
+        f"*ENTRY* - {entry:.4f}\n\n"
+        f"*TP1* - {tp1:.4f}\n"
+        f"*TP2* - {tp2:.4f}\n"
+        f"*TP3* - {tp3:.4f}\n\n"
+        f"*SL* - {sl:.4f}\n\n"
         f"USE PROPER RISK MANAGEMENT\n\n"
         f"RISK ONLY 5 - 10% ✅"
     )
     return msg
 
 # =========================
-# BOT COMMANDS
+# BOT HANDLERS
 # =========================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Welcome to Crypto Signal Bot!\n\n"
-        "Use /autosignal COIN or multiple coins.\n"
-        "Example: /autosignal BTC ETH TRUMP"
+        "Send the *coin name* (e.g., BTC, ETH, TRUMP) to get a trading signal.\n"
+        "Example: `BTC` or `TRUMP`\n\n"
+        "You can send multiple like: `BTC ETH TRUMP`",
+        parse_mode="Markdown"
     )
 
-async def autosignal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        await update.message.reply_text("⚠️ Usage: /autosignal BTC ETH TRUMP ...")
+async def handle_coin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message.text:
         return
 
-    coins = [c.upper() for c in context.args]
+    coins = update.message.text.upper().split()
 
     for coin in coins:
         symbol = coin if coin.endswith("USDT") else coin + "USDT"
@@ -2930,8 +2939,8 @@ def main():
     keep_alive()  # remove if not needed
     app = Application.builder().token(BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("autosignal", autosignal))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_coin))
+    app.add_handler(MessageHandler(filters.COMMAND, start))  # fallback for /start
 
     logger.info("Bot is running...")
     app.run_polling()
